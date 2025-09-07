@@ -1,25 +1,29 @@
 package com.ubots.flowpay;
 
+import jakarta.persistence.*;
+
+@Entity
 public class Request {
-    private int id;
+
+    private @Id @GeneratedValue Long id;
+    @ManyToOne
+    @JoinColumn(name = "attendant_id")
     private Attendant attendant;
     private RequestStatus status;
     private Team team;
 
     public Request() {}
 
-    public Request(int id, Attendant attendant, RequestStatus status, Team team) {
-        this.id = id;
-        this.attendant = attendant;
+    public Request(RequestStatus status, Team team) {
         this.status = status;
         this.team = team;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
