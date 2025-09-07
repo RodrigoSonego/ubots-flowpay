@@ -1,7 +1,14 @@
 package com.ubots.flowpay;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+
+@Entity
 public class Attendant {
-    private int id;
+
+    private @Id
+    @GeneratedValue int id;
     private String name;
     private final int MAX_REQUESTS = 3;
     private int currentRequestCount;
@@ -9,8 +16,7 @@ public class Attendant {
 
     public Attendant() {}
 
-    public Attendant(int id, String name, Team team) {
-        this.id = id;
+    public Attendant(String name, Team team) {
         this.name = name;
         this.team = team;
     }
