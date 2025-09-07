@@ -5,7 +5,9 @@ public enum Team {
     LOAN,
     OTHER;
 
+    private final static Team[] values = Team.values();
+
     public static Team fromInt(int i) {
-        return Team.values()[i];
+        return values[i];
     }
 }

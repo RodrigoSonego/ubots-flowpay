@@ -18,6 +18,11 @@ public class AttendantController {
         return attendantRepository.findAll();
     }
 
+    @GetMapping("attendants/team/{team}")
+    public List<Attendant> getAttendantsByTeam(@PathVariable("team") int team) {
+        return attendantRepository.findAttendantByTeam(Team.fromInt(team));
+    }
+
     @GetMapping("/attendants/{id}")
     public Attendant getAttendantById(@PathVariable Integer id) {
         return attendantRepository.findById(id).orElse(null);
