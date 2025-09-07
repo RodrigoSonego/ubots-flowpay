@@ -1,5 +1,9 @@
-package com.ubots.flowpay;
+package com.ubots.flowpay.services;
 
+import com.ubots.flowpay.Attendant;
+import com.ubots.flowpay.Team;
+import com.ubots.flowpay.controllers.AttendantController;
+import com.ubots.flowpay.repositories.AttendantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,7 +20,6 @@ public class AttendantService {
         this.attendantRepository = attendantRepository;
     }
 
-
     public Attendant getAttendantWithLessRequests(Team team) {
         List<Attendant> attendants = attendantRepository.findAttendantByTeam(team);
 
@@ -29,6 +32,12 @@ public class AttendantService {
         }
 
         return attendants.get(0);
+    }
+
+    public void DecrementAttendantRequestCount(Attendant attendant) {
+        attendant.decrementRequestCount();
+
+        attendantRepository.save(attendant);
     }
 
 }

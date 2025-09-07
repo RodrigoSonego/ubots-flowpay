@@ -1,5 +1,9 @@
-package com.ubots.flowpay;
+package com.ubots.flowpay.repositories;
 
+import com.ubots.flowpay.Attendant;
+import com.ubots.flowpay.Request;
+import com.ubots.flowpay.RequestStatus;
+import com.ubots.flowpay.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

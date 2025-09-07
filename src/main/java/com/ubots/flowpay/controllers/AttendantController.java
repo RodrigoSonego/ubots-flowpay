@@ -1,11 +1,12 @@
-package com.ubots.flowpay;
+package com.ubots.flowpay.controllers;
 
+import com.ubots.flowpay.Attendant;
+import com.ubots.flowpay.exceptions.AttendantNotFoundException;
+import com.ubots.flowpay.repositories.AttendantRepository;
+import com.ubots.flowpay.Team;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Comparator;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RestController
 public class AttendantController {
@@ -28,7 +29,7 @@ public class AttendantController {
 
     @GetMapping("/attendants/{id}")
     public Attendant getAttendantById(@PathVariable Integer id) {
-        return attendantRepository.findById(id).orElse(null);
+        return attendantRepository.findById(id).orElseThrow(() -> new AttendantNotFoundException(id));
     }
 
     @PostMapping("/attendants")
