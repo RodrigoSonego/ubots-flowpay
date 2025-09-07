@@ -38,12 +38,13 @@ public class RequestController {
         // TODO: Exception se type for numero errado
         Team team = Team.fromInt(type);
 
+        // TODO: tratar se é null
         Attendant attendant = attendantService.getAttendantWithLessRequests(team);
 
         //TODO: fazer de fato a request em um Service
         Request request = new Request(RequestStatus.ON_HOLD, team);
         request.setAttendant(attendant);
-        attendant.incrementRequestCount();
+        attendantService.onRequestAssignedToAttendant(attendant);
 
         return requestRepository.save(request);
     }

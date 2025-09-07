@@ -41,10 +41,6 @@ public class Attendant {
         return currentRequestCount;
     }
 
-    public void setCurrentRequestCount(int currentRequestCount) {
-        this.currentRequestCount = currentRequestCount;
-    }
-
     public void incrementRequestCount() {
         this.currentRequestCount++;
     }
@@ -61,7 +57,7 @@ public class Attendant {
         this.team = team;
     }
 
-    public int getMAX_REQUESTS() {
-        return MAX_REQUESTS;
+    public boolean isBusy() {
+        return currentRequestCount >= MAX_REQUESTS;
     }
 }
