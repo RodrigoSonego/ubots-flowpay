@@ -45,11 +45,23 @@ public class Attendant {
         this.currentRequestCount = currentRequestCount;
     }
 
+    public void incrementRequestCount() {
+        this.currentRequestCount++;
+    }
+
+    public void decrementRequestCount() {
+        this.currentRequestCount--;
+    }
+
     public Team getTeam() {
         return team;
     }
 
     public void setTeam(Team team) {
         this.team = team;
+    }
+
+    public int getMAX_REQUESTS() {
+        return MAX_REQUESTS;
     }
 }

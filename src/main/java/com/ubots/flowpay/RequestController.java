@@ -11,9 +11,11 @@ import java.util.List;
 public class RequestController {
 
     RequestRepository requestRepository;
+    AttendantService attendantService;
 
-    RequestController(RequestRepository requestRepository) {
+    RequestController(RequestRepository requestRepository, AttendantService attendantService) {
         this.requestRepository = requestRepository;
+        this.attendantService = attendantService;
     }
 
     @GetMapping("/request")
@@ -32,12 +34,13 @@ public class RequestController {
         // TODO: Exception se type for numero errado
         Team team = Team.fromInt(type);
 
-        //TODO: fazer de fato a request
-        Request request = new Request();
-        Attendant attendant = new Attendant("Cleber", team);
-        request.setStatus(RequestStatus.ON_HOLD);
-        request.setTeam(team);
+        Attendant attendant = attendantService.getAttendantWithLessRequests(team);
 
-        return request;
+        //TODO: fazer de fato a request
+        Request request = new Request(RequestStatus.ON_HOLD, team);
+        request.setAttendant(attendant);
+        attendant.incrementRequestCount();
+
+        return requestRepository.save(request);
     }
 }
