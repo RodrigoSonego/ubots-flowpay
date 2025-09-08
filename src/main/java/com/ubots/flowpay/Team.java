@@ -14,4 +14,8 @@ public enum Team {
     public static boolean isValidOrdinal(int i){
         return i >= 0 && i <= values.length;
     }
+
+    public static int toInt(Team team){
+        return team.ordinal();
+    }
 }
