@@ -1,40 +1,37 @@
 package com.ubots.flowpay.controllers;
 
 import com.ubots.flowpay.Attendant;
-import com.ubots.flowpay.exceptions.AttendantNotFoundException;
-import com.ubots.flowpay.repositories.AttendantRepository;
-import com.ubots.flowpay.Team;
+import com.ubots.flowpay.services.AttendantService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 public class AttendantController {
+    AttendantService attendantService;
 
-    AttendantRepository attendantRepository;
-
-    AttendantController(AttendantRepository attendantRepository) {
-        this.attendantRepository = attendantRepository;
+    AttendantController(AttendantService attendantService) {
+        this.attendantService = attendantService;
     }
 
     @GetMapping("/attendants")
     public List<Attendant> getAttendants() {
-        return attendantRepository.findAll();
+        return attendantService.getAllAttendants();
     }
 
     @GetMapping("attendants/team/{team}")
     public List<Attendant> getAttendantsByTeam(@PathVariable("team") int team) {
-        return attendantRepository.findAttendantByTeam(Team.fromInt(team));
+        return attendantService.getAttendantsByTeam(team);
     }
 
     @GetMapping("/attendants/{id}")
     public Attendant getAttendantById(@PathVariable Integer id) {
-        return attendantRepository.findById(id).orElseThrow(() -> new AttendantNotFoundException(id));
+        return attendantService.getAttendantById(id);
     }
 
     @PostMapping("/attendants")
     public Attendant postAttendant(@RequestBody Attendant attendant) {
-        return attendantRepository.save(attendant);
+        return attendantService.createAttendant(attendant);
     }
 
 }

@@ -3,6 +3,7 @@ package com.ubots.flowpay.services;
 import com.ubots.flowpay.Attendant;
 import com.ubots.flowpay.Team;
 import com.ubots.flowpay.controllers.AttendantController;
+import com.ubots.flowpay.exceptions.AttendantNotFoundException;
 import com.ubots.flowpay.repositories.AttendantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,22 @@ public class AttendantService {
         attendantsList = new HashMap<>();
     }
 
+    public List<Attendant> getAllAttendants() {
+        return attendantRepository.findAll();
+    }
+
+    public Attendant getAttendantById(int id) {
+        return attendantRepository.findById(id).orElseThrow(() -> new AttendantNotFoundException(id));
+    }
+
+    public List<Attendant> getAttendantsByTeam(int team){
+        return attendantRepository.findAttendantByTeam(Team.fromInt(team));
+    }
+
+    public Attendant createAttendant(Attendant attendant) {
+        return attendantRepository.save(attendant);
+    }
+
     public Attendant getAttendantWithLessRequests(Team team) {
 
         // Cacheia a lista se já não tem
@@ -39,9 +56,7 @@ public class AttendantService {
         if (attendant != null && attendant.isBusy()){
             return null;
         }
-
-        //log.info("Attendant with less requests: " + attendant.getName());
-
+        
         return attendant;
     }
 
@@ -76,28 +91,13 @@ public class AttendantService {
         }
     }
 
-    /// Posiciona o atendente na lista com base no numero de atendimentos
-//    private void sortAttendantInList(Attendant attendant) {
-//
-//        int lastIndex = attendantsList.get(attendant.getTeam()).size() - 1;
-//
-//        LinkedList<Attendant> attendants = attendantsList.get(attendant.getTeam());
-//
-//        int newIndex = lastIndex;
-//        for (int i = lastIndex; i >= 0; --i) {
-//            if(attendants.get(i).getCurrentRequestCount() >= attendant.getCurrentRequestCount()){
-//                break;
-//            }
-//
-//            newIndex = i;
-//        }
-//
-//        attendants.remove(attendant);
-//        attendants.add(newIndex, attendant);
-//
-//        for (Attendant at : attendantsList.get(attendant.getTeam())) {
-//            log.info(String.format("attendant %s has %d requests at index %d", at.getName(), at.getCurrentRequestCount(), attendantsList.get(attendant.getTeam()).indexOf(attendant)));
-//        }
-//    }
+    public void onAttendantRequestFinished(Attendant attendant) {
+        attendantsList.get(attendant.getTeam()).remove(attendant);
+
+        attendant.decrementRequestCount();
+        attendantRepository.save(attendant);
+
+        attendantsList.get(attendant.getTeam()).add(attendant);
+    }
 
 }
