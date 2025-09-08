@@ -40,7 +40,7 @@ public class AttendantService {
             return null;
         }
 
-        log.info("Attendant with less requests: " + attendant.getName());
+        //log.info("Attendant with less requests: " + attendant.getName());
 
         return attendant;
     }
@@ -64,9 +64,6 @@ public class AttendantService {
     }
 
     public void onRequestAssignedToAttendant(Attendant attendant) {
-        //TODO: handle this
-        if  (attendant == null) return;
-
         attendantsList.get(attendant.getTeam()).remove(attendant);
 
         attendant.incrementRequestCount();

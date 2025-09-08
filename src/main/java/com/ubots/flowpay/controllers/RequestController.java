@@ -1,9 +1,7 @@
 package com.ubots.flowpay.controllers;
 
 import com.ubots.flowpay.*;
-import com.ubots.flowpay.exceptions.RequestNotFoundException;
-import com.ubots.flowpay.repositories.RequestRepository;
-import com.ubots.flowpay.services.AttendantService;
+import com.ubots.flowpay.services.RequestService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,61 +12,37 @@ import java.util.List;
 @RestController
 public class RequestController {
 
-    RequestRepository requestRepository;
-    AttendantService attendantService;
+    RequestService requestService;
 
-    RequestController(RequestRepository requestRepository, AttendantService attendantService) {
-        this.requestRepository = requestRepository;
-        this.attendantService = attendantService;
+    RequestController(RequestService requestService) {
+        this.requestService = requestService;
     }
 
     @GetMapping("/request")
     public List<Request> getRequests() {
-        return requestRepository.findAll();
+        return requestService.getAllRequests();
     }
 
     @GetMapping("/request/{id}")
     public Request getRequest(@PathVariable Long id){
-        return requestRepository.findById(id).orElse(null);
+        return requestService.getRequestById(id);
     }
 
     @PostMapping("/request/{type}")
     public Request postRequest(@PathVariable("type") int type)
     {
-        // TODO: Exception se type for numero errado
-        Team team = Team.fromInt(type);
-
-        // TODO: tratar se é null
-        Attendant attendant = attendantService.getAttendantWithLessRequests(team);
-
-        //TODO: fazer de fato a request em um Service
-        Request request = new Request(RequestStatus.ON_HOLD, team);
-        request.setAttendant(attendant);
-        attendantService.onRequestAssignedToAttendant(attendant);
-
-        return requestRepository.save(request);
+        return requestService.createRequest(type);
     }
 
     @PostMapping("/request/{id}/complete")
     public Request completeRequest(@PathVariable Long id)
     {
-        Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new RequestNotFoundException(id));
-
-        request.setStatus(RequestStatus.COMPLETED);
-
-        return requestRepository.save(request);
+        return requestService.completeRequest(id);
     }
 
     @PostMapping("/request/{id}/cancel")
     public Request cancelRequest(@PathVariable Long id)
     {
-        Request request = requestRepository.findById(id)
-                .orElseThrow(() -> new RequestNotFoundException(id));
-
-        request.setStatus(RequestStatus.CANCELED);
-        attendantService.DecrementAttendantRequestCount(request.getAttendant());
-
-        return requestRepository.save(request);
+        return requestService.cancelRequest(id);
     }
 }
