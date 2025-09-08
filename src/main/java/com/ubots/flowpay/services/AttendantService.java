@@ -4,6 +4,7 @@ import com.ubots.flowpay.Attendant;
 import com.ubots.flowpay.Team;
 import com.ubots.flowpay.controllers.AttendantController;
 import com.ubots.flowpay.exceptions.AttendantNotFoundException;
+import com.ubots.flowpay.exceptions.InvalidTeamOrdinalException;
 import com.ubots.flowpay.repositories.AttendantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,12 @@ public class AttendantService {
         return attendantRepository.findById(id).orElseThrow(() -> new AttendantNotFoundException(id));
     }
 
-    public List<Attendant> getAttendantsByTeam(int team){
+    public List<Attendant> getAttendantsByTeam(int team) {
+
+        if(!Team.isValidOrdinal(team)){
+            throw new InvalidTeamOrdinalException(team);
+        }
+
         return attendantRepository.findAttendantByTeam(Team.fromInt(team));
     }
 

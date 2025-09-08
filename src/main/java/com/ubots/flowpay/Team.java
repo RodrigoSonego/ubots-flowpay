@@ -10,4 +10,8 @@ public enum Team {
     public static Team fromInt(int i) {
         return values[i];
     }
+
+    public static boolean isValidOrdinal(int i){
+        return i >= 0 && i <= values.length;
+    }
 }

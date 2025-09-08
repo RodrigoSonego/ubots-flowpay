@@ -4,6 +4,8 @@ import com.ubots.flowpay.Attendant;
 import com.ubots.flowpay.Request;
 import com.ubots.flowpay.RequestStatus;
 import com.ubots.flowpay.Team;
+import com.ubots.flowpay.exceptions.InvalidRequestStatusException;
+import com.ubots.flowpay.exceptions.InvalidTeamOrdinalException;
 import com.ubots.flowpay.exceptions.RequestNotFoundException;
 import com.ubots.flowpay.repositories.RequestRepository;
 import org.slf4j.Logger;
@@ -34,11 +36,13 @@ public class RequestService {
 
     public Request createRequest(int type)
     {
-        // TODO: Exception se type for numero errado
+        if (!Team.isValidOrdinal(type)) {
+            throw new InvalidTeamOrdinalException(type);
+        }
+
         Team team = Team.fromInt(type);
 
         Attendant attendant = attendantService.getAttendantWithLessRequests(team);
-
 
         if  (attendant == null){
             Request request = new Request(RequestStatus.ON_HOLD, team);
@@ -64,7 +68,7 @@ public class RequestService {
     }
 
     public Request getRequestById(Long id){
-        return requestRepository.findById(id).orElse(null);
+        return requestRepository.findById(id).orElseThrow(() -> new RequestNotFoundException(id));
     }
 
     public Request completeRequest(Long id)
@@ -82,6 +86,10 @@ public class RequestService {
     public Request cancelRequest(Long id){
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new RequestNotFoundException(id));
+
+        if(request.getStatus() != RequestStatus.IN_PROGRESS){
+            throw new InvalidRequestStatusException(request.getStatus());
+        }
 
         request.setStatus(RequestStatus.CANCELED);
 
