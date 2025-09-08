@@ -4,31 +4,32 @@ import com.ubots.flowpay.Attendant;
 import com.ubots.flowpay.Request;
 import com.ubots.flowpay.RequestStatus;
 import com.ubots.flowpay.Team;
-import com.ubots.flowpay.controllers.RequestController;
 import com.ubots.flowpay.exceptions.RequestNotFoundException;
-import com.ubots.flowpay.repositories.AttendantRepository;
 import com.ubots.flowpay.repositories.RequestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 @Service
 public class RequestService {
 
-    private RequestRepository requestRepository;
-    private AttendantService attendantService;
+    private final RequestRepository requestRepository;
+    private final AttendantService attendantService;
 
-    SynchronousQueue<Request> queue;
+    HashMap<Team, ArrayBlockingQueue<Request>> requestQueues;
 
-    RequestService(RequestRepository requestRepository, AttendantService attendantService) {
+    Logger log = LoggerFactory.getLogger(RequestService.class);
+
+    RequestService(RequestRepository requestRepository, @Lazy AttendantService attendantService) {
         this.requestRepository = requestRepository;
         this.attendantService = attendantService;
 
-        queue = new SynchronousQueue<>();
+        requestQueues = new HashMap<>();
     }
 
     public Request createRequest(int type)
@@ -36,18 +37,21 @@ public class RequestService {
         // TODO: Exception se type for numero errado
         Team team = Team.fromInt(type);
 
-        // TODO: tratar se é null
         Attendant attendant = attendantService.getAttendantWithLessRequests(team);
 
-        Logger log = LoggerFactory.getLogger(RequestController.class);
-        log.info(String.format("attendant got for request: %S", attendant == null ? "null" : attendant.getName()));
 
         if  (attendant == null){
             Request request = new Request(RequestStatus.ON_HOLD, team);
+
+            try {
+                addRequestToQueue(request);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
             return requestRepository.save(request);
         }
 
-        //TODO: fazer de fato a request em um Service
         Request request = new Request(RequestStatus.IN_PROGRESS, team);
         request.setAttendant(attendant);
         attendantService.onRequestAssignedToAttendant(attendant);
@@ -70,6 +74,8 @@ public class RequestService {
 
         request.setStatus(RequestStatus.COMPLETED);
 
+        attendantService.onAttendantRequestFinished(request.getAttendant());
+
         return requestRepository.save(request);
     }
 
@@ -78,17 +84,38 @@ public class RequestService {
                 .orElseThrow(() -> new RequestNotFoundException(id));
 
         request.setStatus(RequestStatus.CANCELED);
-        attendantService.DecrementAttendantRequestCount(request.getAttendant());
+
+        attendantService.onAttendantRequestFinished(request.getAttendant());
 
         return requestRepository.save(request);
     }
 
-    private void addRequestToQueue(Request request) {
-        queue.offer(request);
+    public boolean tryToAssignQueuedRequestToAttendant(Attendant attendant)
+    {
+        Team team = attendant.getTeam();
+
+        if (requestQueues.isEmpty() || requestQueues.get(team).isEmpty()) return false;
+
+        Request request = requestQueues.get(team).poll();
+        request.setAttendant(attendant);
+        request.setStatus(RequestStatus.IN_PROGRESS);
+
+        requestRepository.save(request);
+        attendantService.onRequestAssignedToAttendant(attendant);
+
+        log.info(String.format("assigned request %d to attendant %s from queue, new size: %d", request.getId(), attendant.getName(), requestQueues.get(team).size()));
+
+        return true;
     }
 
-    public Request getRequestFromQueue(){
-        return queue.poll();
+    private void addRequestToQueue(Request request) throws InterruptedException {
+        if (!requestQueues.containsKey(request.getTeam())){
+            requestQueues.put(request.getTeam(), new ArrayBlockingQueue<>(100));
+        }
+
+        requestQueues.get(request.getTeam()).add(request);
+
+        log.info(String.format("queue size: %d", requestQueues.get(request.getTeam()).size()));
     }
 
 }

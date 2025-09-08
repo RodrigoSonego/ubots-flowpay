@@ -7,6 +7,7 @@ import com.ubots.flowpay.exceptions.AttendantNotFoundException;
 import com.ubots.flowpay.repositories.AttendantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -14,16 +15,18 @@ import java.util.*;
 @Service
 public class AttendantService {
 
+    private final RequestService requestService;
     Logger log = LoggerFactory.getLogger(AttendantController.class);
 
     AttendantRepository attendantRepository;
 
     HashMap<Team, PriorityQueue<Attendant>> attendantsList;
 
-    AttendantService(AttendantRepository attendantRepository) {
+    AttendantService(AttendantRepository attendantRepository, @Lazy RequestService requestService) {
         this.attendantRepository = attendantRepository;
 
         attendantsList = new HashMap<>();
+        this.requestService = requestService;
     }
 
     public List<Attendant> getAllAttendants() {
@@ -58,7 +61,7 @@ public class AttendantService {
         return attendant;
     }
 
-    public void DecrementAttendantRequestCount(Attendant attendant) {
+    public void decrementAttendantRequestCount(Attendant attendant) {
         attendant.decrementRequestCount();
 
         attendantRepository.save(attendant);
@@ -81,8 +84,13 @@ public class AttendantService {
     public void onAttendantRequestFinished(Attendant attendant) {
         attendantsList.get(attendant.getTeam()).remove(attendant);
 
-        attendant.decrementRequestCount();
-        attendantRepository.save(attendant);
+        decrementAttendantRequestCount(attendant);
+
+        // Se conseguir pegar uma request da fila, onRequestAssigned vai ser chamado e
+        // cuida da reogranização da fila
+        if (requestService.tryToAssignQueuedRequestToAttendant(attendant)){
+            return;
+        }
 
         attendantsList.get(attendant.getTeam()).add(attendant);
     }
