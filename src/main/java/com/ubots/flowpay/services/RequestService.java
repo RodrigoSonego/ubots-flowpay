@@ -76,6 +76,10 @@ public class RequestService {
         Request request = requestRepository.findById(id)
                 .orElseThrow(() -> new RequestNotFoundException(id));
 
+        if(request.getStatus() != RequestStatus.IN_PROGRESS){
+            throw new InvalidRequestStatusException(request.getStatus());
+        }
+
         request.setStatus(RequestStatus.COMPLETED);
 
         attendantService.onAttendantRequestFinished(request.getAttendant());
