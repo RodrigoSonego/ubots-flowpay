@@ -39,15 +39,13 @@ public class AttendantService {
     }
 
     public Attendant createAttendant(Attendant attendant) {
-        return attendantRepository.save(attendant);
+        attendantRepository.save(attendant);
+        addAttendantToMap(attendant);
+
+        return attendant;
     }
 
     public Attendant getAttendantWithLessRequests(Team team) {
-
-        // Cacheia a lista se já não tem
-        if (!attendantsList.containsKey(team)) {
-           sortAttendantsInTeamAndAddToCache(team);
-        }
 
         PriorityQueue<Attendant> attendants = attendantsList.get(team);
 
@@ -56,7 +54,7 @@ public class AttendantService {
         if (attendant != null && attendant.isBusy()){
             return null;
         }
-        
+
         return attendant;
     }
 
@@ -66,17 +64,6 @@ public class AttendantService {
         attendantRepository.save(attendant);
     }
 
-    private void sortAttendantsInTeamAndAddToCache(Team team) {
-        PriorityQueue<Attendant> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(Attendant::getCurrentRequestCount));
-
-        priorityQueue.addAll(attendantRepository.findAttendantByTeam(team));
-
-        attendantsList.put(team, priorityQueue);
-
-        for (Attendant at : attendantsList.get(team)) {
-            log.info(String.format("attendant %s has %d requests", at.getName(), at.getCurrentRequestCount()));
-        }
-    }
 
     public void onRequestAssignedToAttendant(Attendant attendant) {
         attendantsList.get(attendant.getTeam()).remove(attendant);
@@ -98,6 +85,17 @@ public class AttendantService {
         attendantRepository.save(attendant);
 
         attendantsList.get(attendant.getTeam()).add(attendant);
+    }
+
+    private void addAttendantToMap(Attendant attendant) {
+        Team team = attendant.getTeam();
+
+        if (!attendantsList.containsKey(team)) {
+            PriorityQueue<Attendant> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(Attendant::getCurrentRequestCount));
+            attendantsList.put(team, priorityQueue);
+        }
+
+        attendantsList.get(team).add(attendant);
     }
 
 }

@@ -1,6 +1,6 @@
 package com.ubots.flowpay;
 
-import com.ubots.flowpay.repositories.AttendantRepository;
+import com.ubots.flowpay.services.AttendantService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,10 +9,10 @@ import org.springframework.context.annotation.Configuration;
 public class DatabaseStarter {
 
     @Bean
-    CommandLineRunner init(AttendantRepository attendantRepository) {
+    CommandLineRunner init(AttendantService attendantService) {
         return args -> {
-            attendantRepository.save(new Attendant("João", Team.CARD));
-            attendantRepository.save(new Attendant("Maria", Team.LOAN));
+            attendantService.createAttendant(new Attendant("João", Team.CARD));
+            attendantService.createAttendant(new Attendant("Maria", Team.LOAN));
         };
     }
 }
