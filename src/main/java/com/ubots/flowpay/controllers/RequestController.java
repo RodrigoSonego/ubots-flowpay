@@ -1,9 +1,18 @@
 package com.ubots.flowpay.controllers;
 
 import com.ubots.flowpay.*;
+import com.ubots.flowpay.exceptions.InvalidRequestStatusException;
+import com.ubots.flowpay.exceptions.InvalidTeamOrdinalException;
+import com.ubots.flowpay.exceptions.RequestNotFoundException;
 import com.ubots.flowpay.services.RequestService;
+import org.apache.coyote.Response;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.mediatype.problem.Problem;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,33 +45,89 @@ public class RequestController {
     }
 
     @GetMapping("/request/{id}")
-    public EntityModel<Request> getRequest(@PathVariable Long id){
-        Request request = requestService.getRequestById(id);
+    public ResponseEntity<?> getRequest(@PathVariable Long id){
+        try{
+            Request request = requestService.getRequestById(id);
 
-        return assembler.toModel(request);
+            return ResponseEntity.ok(assembler.toModel(request));
+        }
+        catch(RequestNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                                    .withTitle("Not Found")
+                                    .withDetail(e.getMessage())
+                            );
+        }
+
     }
 
     @PostMapping("/request/{type}")
-    public EntityModel<Request> postRequest(@PathVariable("type") int type)
-    {
-        Request createdRequest = requestService.createRequest(type);
+    public ResponseEntity<?> postRequest(@PathVariable("type") int type) {
+        try {
+            Request createdRequest = requestService.createRequest(type);
 
-        return assembler.toModel(createdRequest);
+            return ResponseEntity.ok(assembler.toModel(createdRequest));
+        }
+        catch (InvalidTeamOrdinalException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                            .withTitle("Not Found")
+                            .withDetail(e.getMessage())
+                    );
+        }
+
     }
 
     @PostMapping("/request/{id}/complete")
-    public EntityModel<Request> completeRequest(@PathVariable Long id)
-    {
-        Request request = requestService.completeRequest(id);
+    public ResponseEntity<?> completeRequest(@PathVariable Long id) {
+        try {
+            Request request = requestService.completeRequest(id);
 
-        return assembler.toModel(request);
+            return ResponseEntity.ok(assembler.toModel(request));
+
+        }
+        catch (RequestNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                            .withTitle("Not Found")
+                            .withDetail(e.getMessage())
+                    );
+        }
+        catch (InvalidRequestStatusException e) {
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                            .withTitle("Method Not Allowed")
+                            .withDetail(e.getMessage())
+                    );
+        }
     }
 
     @PostMapping("/request/{id}/cancel")
-    public EntityModel<Request> cancelRequest(@PathVariable Long id)
-    {
-        Request request = requestService.cancelRequest(id);
+    public ResponseEntity<?> cancelRequest(@PathVariable Long id) {
+        try {
+            Request request = requestService.cancelRequest(id);
 
-        return assembler.toModel(request);
+            return ResponseEntity.ok(assembler.toModel(request));
+        }
+        catch (RequestNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                            .withTitle("Not Found")
+                            .withDetail(e.getMessage())
+                    );
+        }
+        catch (InvalidRequestStatusException e) {
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                            .withTitle("Method Not Allowed")
+                            .withDetail(e.getMessage())
+                    );
+        }
     }
 }

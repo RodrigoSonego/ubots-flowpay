@@ -2,9 +2,17 @@ package com.ubots.flowpay.controllers;
 
 import com.ubots.flowpay.Attendant;
 import com.ubots.flowpay.AttendantModelAssembler;
+import com.ubots.flowpay.exceptions.AttendantNotFoundException;
+import com.ubots.flowpay.exceptions.InvalidTeamOrdinalException;
 import com.ubots.flowpay.services.AttendantService;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.mediatype.problem.Problem;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.swing.text.html.parser.Entity;
@@ -35,20 +43,45 @@ public class AttendantController {
     }
 
     @GetMapping("attendants/team/{team}")
-    public CollectionModel<EntityModel<Attendant>> getAttendantsByTeam(@PathVariable("team") int team) {
-        List<Attendant> attendants = attendantService.getAttendantsByTeam(team);
+    public ResponseEntity<?> getAttendantsByTeam(@PathVariable("team") int team) {
+        try {
+            List<Attendant> attendants = attendantService.getAttendantsByTeam(team);
+            List<EntityModel<Attendant>> entities = attendants.stream()
+                    .map(attendantModelAssembler::toModel).toList();
 
-        List<EntityModel<Attendant>> entities = attendants.stream()
-                .map(attendantModelAssembler::toModel).toList();
+            CollectionModel<EntityModel<Attendant>> attendantModels = CollectionModel.of(entities, linkTo(methodOn(AttendantController.class).getAttendantsByTeam(team)).withSelfRel());
 
-        return CollectionModel.of(entities, linkTo(methodOn(AttendantController.class).getAttendantsByTeam(team)).withSelfRel());
+            return ResponseEntity.ok(attendantModels);
+        }
+        catch (InvalidTeamOrdinalException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                            .withTitle("Not Found")
+                            .withDetail(e.getMessage())
+                    );
+        }
+
     }
 
     @GetMapping("/attendants/{id}")
-    public EntityModel<Attendant> getAttendantById(@PathVariable Integer id) {
-        Attendant attendant = attendantService.getAttendantById(id);
+    public ResponseEntity<?> getAttendantById(@PathVariable Integer id) {
 
-        return attendantModelAssembler.toModel(attendant);
+        try {
+            Attendant attendant = attendantService.getAttendantById(id);
+
+            return ResponseEntity.ok(attendantModelAssembler.toModel(attendant));
+
+        }
+        catch (AttendantNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaTypes.HTTP_PROBLEM_DETAILS_JSON_VALUE)
+                    .body(Problem.create()
+                            .withTitle("Not Found")
+                            .withDetail(e.getMessage())
+                    );
+        }
+
     }
 
     @PostMapping("/attendants")
